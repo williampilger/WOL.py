@@ -20,6 +20,10 @@ Abra o terminal no diretório onde o arquivo está e digite:
 
 > wol.py host1
 
+ou
+
+> python wol.py host1
+
 **Executar - Linux**
 
 Abra o terminal no diretório onde o arquivo está e digite:
