@@ -10,6 +10,7 @@ Faça o downloas do repositório, e configure seus hosts no arquivo `wol_config.
 ```
 host1	192.168.2.255	a4:5e:81:f8:a9:9a
 host2	192.168.2.255	7a:d8:8c:8b:c9:74
+hostn ...
 ```
 
 obs: Utilize uma linha por host, e espaços de TAB para separar as configurações.
