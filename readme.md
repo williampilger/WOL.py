@@ -46,4 +46,4 @@ William Pilger | Authenty AE | Bom Principio - RS - Brasil
 
 Aqui estão listadas algumas referências, nas quais foram realizadas algumas consultas.
 
-- (Wake-On-Lan-Python)[https://github.com/bentasker/Wake-On-Lan-Python]
+- [Wake-On-Lan-Python](https://github.com/bentasker/Wake-On-Lan-Python)
