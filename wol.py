@@ -42,31 +42,46 @@ def ler_config(fileName):
                 data[host[0]] = host[1:]
     return data
 
+def print_list(config):
+    print('\n\n Hosts configurados:')
+    for host in config:
+        print(f"     {host} -> [ {config[host][0]} | {config[host][1]} ]")
+
+def print_help():
+    print(" Desenvolvido por William Pilger | AuthentyAE | Bom Princípio - RS - Brasil")
+    print("      wol.py [ARG]")
+    print("           ARG:")
+    print("              -all - Envia o Magic Packet para todos os Hosts configurados.")
+    print("              -list - Lista todos os Hosts configurados.")
+    print("              -help - Envia o Magic Packet para todos os Hosts configurados.")
+    print("              seuHost - Envia o Magic Packet para o host informado, se ele existir")
+    print("\n      wol_config.ini")
+    print("              Este arquivo DEVE conter a configuração dos hosts, e deve estar neste diretório.")
+    print("              A correta disposição dos dados é:")
+    print("                     hostname    broadcast_ip    mac_adrs")
+    print("                     exemplo     192.168.2.255   a4:5e:81:f8:a9:9a")
+    print("              A separação dos dados é feita por TAB.")
+    print("              Caso o arquivo não exista, um exemplo será criado ao executar o WOL.")
+
 if __name__ == '__main__':
     config = ler_config('wol_config.ini')
     if(config):
+        wol = False#seta se precisa ser feito o wake-on-lan
         prompt = ("-p" in sys.argv) #Obtém parametros informados
-        if ((arg := sys.argv[-1]) == '-all'):
+        
+        if(len(sys.argv) == 1):#Nenhum argumento foi informado
+            print_list(config)
+            arg = input('\nInforme o host que deseja iniciar: ')
+        else:
+            arg = sys.argv[-1]
+
+        if (arg == '-all'):
             for host in config:
                 WakeupOnLan(config[host][0],config[host][1])
         elif(arg == '-list'):
-            for host in config:
-                print(f"Host: {host} [ {config[host][0]} | {config[host][1]} ]")
+            print_list(config)
         elif(arg == '-help'):
-            print(" Desenvolvido por William Pilger | AuthentyAE | Bom Princípio - RS - Brasil")
-            print("      wol.py [ARG]")
-            print("           ARG:")
-            print("              -all - Envia o Magic Packet para todos os Hosts configurados.")
-            print("              -list - Lista todos os Hosts configurados.")
-            print("              -help - Envia o Magic Packet para todos os Hosts configurados.")
-            print("              seuHost - Envia o Magic Packet para o host informado, se ele existir")
-            print("\n      wol_config.ini")
-            print("              Este arquivo DEVE conter a configuração dos hosts, e deve estar neste diretório.")
-            print("              A correta disposição dos dados é:")
-            print("                     hostname    broadcast_ip    mac_adrs")
-            print("                     exemplo     192.168.2.255   a4:5e:81:f8:a9:9a")
-            print("              A separação dos dados é feita por TAB.")
-            print("              Caso o arquivo não exista, um exemplo será criado ao executar o WOL.")
+            print_help()
         else:
             if(arg in config):
                 WakeupOnLan(config[arg][0], config[arg][1])
