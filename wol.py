@@ -63,18 +63,15 @@ def print_help():
     print("              A separação dos dados é feita por TAB.")
     print("              Caso o arquivo não exista, um exemplo será criado ao executar o WOL.")
 
-if __name__ == '__main__':
+def main(arg):
     config = ler_config('wol_config.ini')
     if(config):
         wol = False#seta se precisa ser feito o wake-on-lan
-        prompt = ("-p" in sys.argv) #Obtém parametros informados
-        
-        if(len(sys.argv) == 1):#Nenhum argumento foi informado
+
+        if( not arg ):
             print_list(config)
             arg = input('\nInforme o host que deseja iniciar: ')
-        else:
-            arg = sys.argv[-1]
-
+        
         if (arg == '-all'):
             for host in config:
                 WakeupOnLan(config[host][0],config[host][1])
@@ -85,8 +82,17 @@ if __name__ == '__main__':
         else:
             if(arg in config):
                 WakeupOnLan(config[arg][0], config[arg][1])
+                input("\nPressione ENTER para sair")
             else:
                 print("Host não existe.")
                 print("use 'wol.py -help' para obter ajuda.")
     else:
         be.sair(2)
+    
+if __name__ == '__main__':
+    prompt = ("-p" in sys.argv) #Obtém parametros informados
+    if(len(sys.argv) == 1):#Nenhum argumento foi informado
+        arg = False
+    else:
+        arg = sys.argv[-1]
+    main(arg)
