@@ -13,9 +13,9 @@ require_once __DIR__.'/config.php';
 require_once LIB_tools;
 
 
-class WOL_job
+class WOL_device
 {
-    const save_dir = DATA_DIR.'/WOL_job';
+    const save_dir = DATA_DIR.'/WOL_deice';
     const DEFAULT_IP_MASK = '192.168.0.0';
     
     public string $id;
@@ -23,35 +23,29 @@ class WOL_job
     public string $device_name;
     public string $device_mac;
     public int $created_at;
-    public int $executed_at;
-    public string $status; // 'queue' | 'done'
-
-    private string $_db_status;//same that status. But it is the DISK STATUS.
 
     /**
      * Instanciate an existent user. ID=0 means a new user.
      * @param int $id user ID.
      * @param mysqli_row $row MySQLi query row (Informed only when user ID = 0, for instantiate the user with query row)
      */
-    public function __construct(string $id = '', $row = null)
+    public function __construct(string $id = '')
     {
         if($id != '')//existent register
         {
-            if( ! $this->load_instance($id, $includeDeleted))
+            if( ! $this->load_instance($id))
             {
-                internalLOG(3, '2206161430 - Unable to instantiate this WOL Job');
-                throw new Exception("2206161430 - Unable to instantiate this WOL Job");
+                internalLOG(3, '2306130541 - Unable to instantiate this WOL device');
+                throw new Exception("2306130541 - Unable to instantiate this WOL device");
             }
         }
         else
         {
             $this->id = '';//will be filed when it be saved
-            $this->device_ipmask = WOL_job::DEFAULT_IP_MASK;
+            $this->device_ipmask = WOL_device::DEFAULT_IP_MASK;
             $this->device_name = 'Standard Device';
             $this->device_mac = '';
             $this->created_at = INI_TIME_STAMP;
-            $this->executed_at = 0;
-            $this->status = $this->_db_status = 'queue';
         }
     }
 
@@ -68,25 +62,23 @@ class WOL_job
         {
             do{
                 $this->id = generateRandomString(32);
-            } while ( !file_exists(WOL_job::save_dir."/{$this->id}.queue") && !file_exists(WOL_job::save_dir."/{$this->id}.done"));
+            } while ( !file_exists(WOL_device::save_dir."/{$this->id}"));
 
         }
         else //UPDATE ENTRY
         {
-            unlink( WOL_job::save_dir."/{$this->id}.{$this->_db_status}" );
+            unlink( WOL_device::save_dir."/{$this->id}" );
         }
 
-        $file = fopen( WOL_job::save_dir."/{$id}.{$this->status}", 'w');
+        $file = fopen( WOL_device::save_dir."/{$id}", 'w');
 
         fwrite($file, $this->device_ipmask."\r\n");
         fwrite($file, $this->device_name."\r\n");
         fwrite($file, $this->device_mac."\r\n");
         fwrite($file, $this->created_at."\r\n");
-        fwrite($file, $this->executed_at."\r\n");
         
         fclose($file);
 
-        $this->_db_status = $this->status;
         return true;
     }
 
@@ -107,7 +99,7 @@ class WOL_job
     {
         if($this->id != '')
         {
-            return unlink( WOL_job::save_dir."/{$this->id}.{$this->_db_status}" );
+            return unlink( WOL_device::save_dir."/{$this->id}" );
         }
         return false;
     }
@@ -124,8 +116,7 @@ class WOL_job
             'device_ipmask' => $this->device_ipmask,
             'device_name' => $this->device_name,
             'device_mac' => $this->device_mac,
-            'created_at' => $this->created_at,
-            'executed_at' => $this->executed_at
+            'created_at' => $this->created_at
         ];
     }
 
@@ -144,23 +135,20 @@ class WOL_job
      * Request users list.
      * This method returns one array with the users instances.
      */
-    public static function list( string $status = '' ) : array
+    public static function list( ) : array
     {
         $arr = [];
 
-        $entries = scandir( WOL_job::save_dir);
+        $entries = scandir( WOL_device::save_dir);
         foreach($entries as $entry){
             $fn = explode('.', $entry);
-            if(cont($fn) == 2)
+            if(cont($fn) == 1)
             {
-                if($status=='' || $status==$fn[1])
-                {
-                    $arr[] = new WOL_job($fn[0]);
-                }
+                $arr[] = new WOL_device($fn[0]);
             }
             else
             {
-                internalLOG(3, '2306130517 - Wrong name format');
+                internalLOG(3, '2306130545 - Wrong name format');
             }
         }        
         return $arr;
@@ -176,31 +164,18 @@ class WOL_job
      */
     private function load_instance( $id )
     {
-        $file = false;
-        if( file_exists(WOL_job::save_dir."/{$this->id}.queue") )
+        if( file_exists(WOL_device::save_dir."/{$this->id}") )
         {
-            $file = 'queue';
-        }
-        else if( file_exists(WOL_job::save_dir."/{$this->id}.done") )
-        {
-            $file = 'done';
-        } else {
-            internal_LOG(2, '2306130521 - Not found');
-        }
-
-        if($file)
-        {
-            $this->status = $this->_db_status = $file;
-
-            $file = WOL_job::save_dir."/{$this->id}.{$file}";
+            $file = WOL_device::save_dir."/{$this->id}";
             $file = file( $file );
             $this->device_ipmask = str_replace(["\r","\n"],['',''], $file[0] );
             $this->device_name = str_replace(["\r","\n"],['',''], $file[1] );
             $this->device_mac = str_replace(["\r","\n"],['',''], $file[2] );
             $this->created_at = intval(str_replace(["\r","\n"],['',''], $file[3] ) );
-            $this->executed_at = intval(str_replace(["\r","\n"],['',''], $file[4] ) );
             fclose($file);
-
+        }
+        else {
+            internal_LOG(2, '2306130546 - Not found');
         }
 
         return false;
