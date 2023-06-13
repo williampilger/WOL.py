@@ -10,12 +10,13 @@
  */
 
 require_once __DIR__.'/config.php';
+require_once LOCAL_DIR.'/WOL_job.php';
 require_once LIB_tools;
 
 
 class WOL_device
 {
-    const save_dir = DATA_DIR.'/WOL_deice';
+    const save_dir = DATA_DIR.'/WOL_device';
     const DEFAULT_IP_MASK = '192.168.0.0';
     
     public string $id;
@@ -62,7 +63,7 @@ class WOL_device
         {
             do{
                 $this->id = generateRandomString(32);
-            } while ( !file_exists(WOL_device::save_dir."/{$this->id}"));
+            } while ( file_exists(WOL_device::save_dir."/{$this->id}"));
 
         }
         else //UPDATE ENTRY
@@ -70,7 +71,7 @@ class WOL_device
             unlink( WOL_device::save_dir."/{$this->id}" );
         }
 
-        $file = fopen( WOL_device::save_dir."/{$id}", 'w');
+        $file = fopen( WOL_device::save_dir."/{$this->id}", 'w');
 
         fwrite($file, $this->device_ipmask."\r\n");
         fwrite($file, $this->device_name."\r\n");
@@ -80,6 +81,23 @@ class WOL_device
         fclose($file);
 
         return true;
+    }
+
+    /**
+     * Create a WOL Job to start this device
+     * @return false|string
+     */
+    public function createJob()
+    {
+        $job = new WOL_job();
+        $job->device_ipmask = $this->device_ipmask;
+        $job->device_mac = $this->device_mac;
+        $job->device_name = $this->device_name;
+        if( $job->Save() )
+        {
+            return $job->id;
+        }
+        return false;
     }
 
     /**
@@ -138,11 +156,12 @@ class WOL_device
     public static function list( ) : array
     {
         $arr = [];
-
-        $entries = scandir( WOL_device::save_dir);
+        
+        $entries = scandir( WOL_device::save_dir );
         foreach($entries as $entry){
+            if($entry=="."||$entry==".."||$entry=="readme.md") continue;
             $fn = explode('.', $entry);
-            if(cont($fn) == 1)
+            if(count($fn) == 1)
             {
                 $arr[] = new WOL_device($fn[0]);
             }
@@ -164,18 +183,19 @@ class WOL_device
      */
     private function load_instance( $id )
     {
-        if( file_exists(WOL_device::save_dir."/{$this->id}") )
+        if( file_exists(WOL_device::save_dir."/{$id}") )
         {
-            $file = WOL_device::save_dir."/{$this->id}";
+            $file = WOL_device::save_dir."/{$id}";
             $file = file( $file );
+            $this->id = $id;
             $this->device_ipmask = str_replace(["\r","\n"],['',''], $file[0] );
             $this->device_name = str_replace(["\r","\n"],['',''], $file[1] );
             $this->device_mac = str_replace(["\r","\n"],['',''], $file[2] );
             $this->created_at = intval(str_replace(["\r","\n"],['',''], $file[3] ) );
-            fclose($file);
+            return true;
         }
         else {
-            internal_LOG(2, '2306130546 - Not found');
+            internalLOG(2, '2306130546 - Not found');
         }
 
         return false;

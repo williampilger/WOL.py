@@ -1,4 +1,13 @@
 <?php
+/*
+ * by: will.i.am  |  github.com/williampilger
+ *
+ * 2023.06.13 - Bom Princípio - RS
+ * ♪ Slow It Down | Alok
+ *  
+ * LOGs Service.
+ * 
+ */
 
 require_once __DIR__.'/config.php';
 require_once __DIR__.'/tools.php';
@@ -40,7 +49,7 @@ class LogService
             $type = LogService::TYPES[$type];
         }
 
-        $dir = LOGS_DIR;
+        $dir = LogService::LOGS_DIR;
         $fileName = $dir.'/'.@date('Y').@date('m').@date('d').'.txt';
 
         $ip = $_SERVER['REMOTE_ADDR'];
@@ -75,7 +84,7 @@ class LogService
     }
 
     public static function getLogs($file, int $inireg=0) {
-        $fileName = isset($file) ? LOGS_DIR.'/'.anti_injection($file) : null;
+        $fileName = isset($file) ? LogService::LOGS_DIR.'/'.$file : null;
 
         if(is_file($fileName))
         {

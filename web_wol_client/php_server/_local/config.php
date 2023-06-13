@@ -38,6 +38,7 @@ error_reporting(0);//Error reporting desativado pra evitar de invasores consegui
     * ########################
  */
 require_once __DIR__.'/LogService.php';
+const log_operacoes = true;
 define('LOG_SESSID', generateRandomString(5));//Used to identificate a unique request.
 function internalLOG($type, $data)
 {
