@@ -34,35 +34,64 @@ Sistema completo para controle e monitoramento de PCs na rede local, com funcion
 
 ## 🛠️ Instalação e Configuração
 
-### 1. Clone do Repositório
+### 🎯 Escolha seu Método de Instalação
+
+| Método | Dificuldade | Recomendado Para |
+|--------|-------------|------------------|
+| **🐳 Docker** | Fácil | Produção, Deploy |
+| **📜 Scripts** | Fácil | Desenvolvimento |
+| **⚙️ Manual** | Médio | Aprendizado |
+
+> 📖 **Guia Completo**: [`METODOS_EXECUCAO.md`](METODOS_EXECUCAO.md)
+
+### Opção 1: Docker (Recomendado para Produção)
+
+#### Instalação Rápida
 ```bash
 git clone <seu-repositorio>
 cd web_wol_client
+./wol-manager.sh start
 ```
 
-### 2. Configuração do Docker Compose
-Edite o arquivo `docker-compose.yml` se necessário para alterar a porta:
-
+#### Configuração Personalizada
+Edite `docker-compose.yml` para alterar porta:
 ```yaml
 ports:
-  - "5000:5000"  # Altere a primeira porta conforme necessário
+  - "5000:5000"  # Altere conforme necessário
 ```
 
-### 3. Inicialização do Sistema
+### Opção 2: Scripts Automáticos (Recomendado para Desenvolvimento)
+
+#### Windows
+```cmd
+# Instalação
+start_windows.bat
+
+# Gerenciamento
+.\wol-native.ps1 start
+.\wol-native.ps1 status
+.\wol-native.ps1 logs
+```
+
+#### Linux
 ```bash
-# Construir e iniciar o container
-docker-compose up -d
+# Instalação
+./start_linux.sh
 
-# Verificar logs
-docker-compose logs -f
+# Gerenciamento
+./wol-native.sh start
+./wol-native.sh status
+./wol-native.sh logs
 ```
 
-### 4. Primeiro Acesso
-1. Acesse `http://localhost:5000` (ou IP do servidor + porta configurada)
-2. Faça login com as credenciais padrão:
-   - **Usuário**: `admin`
-   - **Senha**: `admin123`
-3. **IMPORTANTE**: Altere a senha padrão imediatamente!
+### Opção 3: Instalação Manual
+
+Para instruções detalhadas de instalação manual, consulte [`INSTALACAO_NATIVA.md`](INSTALACAO_NATIVA.md)
+
+### Primeiro Acesso (Todos os Métodos)
+1. Acesse `http://localhost:5000`
+2. **Login**: `admin` | **Senha**: `admin123`
+3. **⚠️ IMPORTANTE**: Altere a senha padrão imediatamente!
 
 ## 📖 Guia de Uso
 
