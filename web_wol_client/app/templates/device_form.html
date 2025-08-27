@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Sistema WOL{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-desktop"></i> {{ title }}</h1>
+            <a href="{{ url_for('devices') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.name.label(class="form-label") }}
+                                {{ form.name(class="form-control") }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.name.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.network_name.label(class="form-label") }}
+                                {{ form.network_name(class="form-control") }}
+                                <div class="form-text">Nome do dispositivo na rede (opcional)</div>
+                                {% if form.network_name.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.network_name.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.ip_address.label(class="form-label") }}
+                                {{ form.ip_address(class="form-control") }}
+                                <div class="form-text">Endereço IP do dispositivo</div>
+                                {% if form.ip_address.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.ip_address.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.mac_address.label(class="form-label") }}
+                                {{ form.mac_address(class="form-control", placeholder="XX:XX:XX:XX:XX:XX") }}
+                                <div class="form-text">Endereço MAC (formato: XX:XX:XX:XX:XX:XX)</div>
+                                {% if form.mac_address.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.mac_address.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control", rows="3") }}
+                        <div class="form-text">Descrição opcional do dispositivo</div>
+                        {% if form.description.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.description.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.wol_port.label(class="form-label") }}
+                                {{ form.wol_port(class="form-control") }}
+                                <div class="form-text">Porta para Wake-on-LAN (padrão: 9)</div>
+                                {% if form.wol_port.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.wol_port.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.subnet_mask.label(class="form-label") }}
+                                {{ form.subnet_mask(class="form-control") }}
+                                <div class="form-text">Máscara de sub-rede</div>
+                                {% if form.subnet_mask.errors %}
+                                    <div class="text-danger small">
+                                        {% for error in form.subnet_mask.errors %}
+                                            <div>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.groups.label(class="form-label") }}
+                        {{ form.groups(class="form-select", multiple=True, size="4") }}
+                        <div class="form-text">Selecione os grupos aos quais este dispositivo pertence (Ctrl+Click para múltiplas seleções)</div>
+                        {% if form.groups.errors %}
+                            <div class="text-danger small">
+                                {% for error in form.groups.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.enable_ping_monitoring(class="form-check-input") }}
+                                    {{ form.enable_ping_monitoring.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">Monitorar status do dispositivo via ping</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.enable_network_discovery(class="form-check-input") }}
+                                    {{ form.enable_network_discovery.label(class="form-check-label") }}
+                                </div>
+                                <div class="form-text">Permitir descoberta automática na rede</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{{ url_for('devices') }}" class="btn btn-secondary">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 
+                            {% if device %}Atualizar{% else %}Criar{% endif %} Dispositivo
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if device %}
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Estatísticas do Dispositivo</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6>Status Atual</h6>
+                            <span class="badge bg-{{ 'success' if device.status.value == 'online' else 'danger' if device.status.value == 'offline' else 'secondary' }} fs-6">
+                                {% if device.status.value == 'online' %}
+                                    <i class="fas fa-check-circle"></i> Online
+                                {% elif device.status.value == 'offline' %}
+                                    <i class="fas fa-times-circle"></i> Offline
+                                {% else %}
+                                    <i class="fas fa-question-circle"></i> Desconhecido
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6>Criado em</h6>
+                            <p>{{ device.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h6>Última Verificação</h6>
+                            <p>
+                                {% if device.last_seen %}
+                                    {{ device.last_seen.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Nunca</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

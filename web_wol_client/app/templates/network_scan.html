@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Scan de Rede{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-search me-2"></i>Scan de Rede
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" class="mb-4">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    {{ form.network_range.label(class="form-label") }}
+                                    {{ form.network_range(class="form-control") }}
+                                    <div class="form-text">
+                                        Exemplos: 192.168.1.0/24, 10.0.0.1-100, 172.16.1.1
+                                    </div>
+                                    {% if form.network_range.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.network_range.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    {{ form.scan_type.label(class="form-label") }}
+                                    {{ form.scan_type(class="form-select") }}
+                                    {% if form.scan_type.errors %}
+                                        <div class="text-danger">
+                                            {% for error in form.scan_type.errors %}
+                                                <div>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-primary") }}
+                                <button type="button" class="btn btn-secondary" id="scanProgress" style="display: none;" disabled>
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    Escaneando...
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    
+                    {% if results %}
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-list me-2"></i>Resultados do Scan ({{ results|length }} dispositivos)
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>IP</th>
+                                            <th>Hostname</th>
+                                            <th>MAC Address</th>
+                                            <th>Status</th>
+                                            <th>Vendor</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for device in results %}
+                                        <tr>
+                                            <td>{{ device.ip }}</td>
+                                            <td>{{ device.hostname or '-' }}</td>
+                                            <td>
+                                                {% if device.mac %}
+                                                    <code>{{ device.mac }}</code>
+                                                {% else %}
+                                                    -
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if device.status == 'online' %}
+                                                    <span class="badge bg-success">Online</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ device.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ device.vendor or '-' }}</td>
+                                            <td>
+                                                {% if device.mac %}
+                                                <button type="button" class="btn btn-sm btn-outline-primary add-device-btn" 
+                                                        data-ip="{{ device.ip }}" 
+                                                        data-hostname="{{ device.hostname or '' }}" 
+                                                        data-mac="{{ device.mac }}"
+                                                        title="Adicionar como dispositivo">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para adicionar dispositivo -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Adicionar Dispositivo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addDeviceForm" action="{{ url_for('add_device') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="deviceName" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="deviceName" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deviceIp" class="form-label">Endereço IP</label>
+                        <input type="text" class="form-control" id="deviceIp" name="ip_address" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deviceMac" class="form-label">MAC Address</label>
+                        <input type="text" class="form-control" id="deviceMac" name="mac_address" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label for="deviceDescription" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="deviceDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Adicionar Dispositivo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Event listeners para botões de adicionar dispositivo
+document.addEventListener('DOMContentLoaded', function() {
+    const addDeviceBtns = document.querySelectorAll('.add-device-btn');
+    addDeviceBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const ip = this.dataset.ip;
+            const hostname = this.dataset.hostname;
+            const mac = this.dataset.mac;
+            addDevice(ip, hostname, mac);
+        });
+    });
+});
+
+function addDevice(ip, hostname, mac) {
+    // Preencher o modal com os dados do dispositivo
+    document.getElementById('deviceName').value = hostname || ip;
+    document.getElementById('deviceIp').value = ip;
+    document.getElementById('deviceMac').value = mac;
+    
+    // Mostrar o modal
+    const modal = new bootstrap.Modal(document.getElementById('addDeviceModal'));
+    modal.show();
+}
+
+// Mostrar progresso durante o scan
+document.querySelector('form').addEventListener('submit', function(e) {
+    const submitBtn = document.querySelector('input[type="submit"]');
+    const progressBtn = document.getElementById('scanProgress');
+    
+    submitBtn.style.display = 'none';
+    progressBtn.style.display = 'inline-block';
+    
+    // Simular progresso
+    setTimeout(function() {
+        submitBtn.style.display = 'inline-block';
+        progressBtn.style.display = 'none';
+    }, 30000); // 30 segundos máximo
+});
+</script>
+{% endblock %}

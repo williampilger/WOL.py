@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - Sistema WOL{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-users"></i> Gerenciamento de Usuários</h1>
+            <a href="{{ url_for('add_user') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Adicionar Usuário
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if users %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Email</th>
+                                <th>Tipo</th>
+                                <th>Status</th>
+                                <th>Grupos</th>
+                                <th>Criado em</th>
+                                <th>Último Login</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <strong>{{ user.username }}</strong>
+                                    {% if user.id == current_user.id %}
+                                    <span class="badge bg-info ms-1">Você</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ user.email }}</td>
+                                <td>
+                                    {% if user.is_admin %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-crown"></i> Administrador
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-user"></i> Usuário
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.is_active %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle"></i> Ativo
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-pause-circle"></i> Inativo
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.device_groups %}
+                                        {% for group in user.device_groups %}
+                                        <span class="badge bg-info me-1">{{ group.name }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">Nenhum grupo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small>{{ user.created_at.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </td>
+                                <td>
+                                    {% if user.last_login %}
+                                        <small>{{ user.last_login.strftime('%d/%m/%Y %H:%M') }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('edit_user', user_id=user.id) }}" class="btn btn-outline-warning" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        {% if user.id != current_user.id %}
+                                        <button class="btn btn-outline-danger" 
+                                                onclick="deleteUser({{ user.id }}, '{{ user.username }}')" 
+                                                title="Excluir">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        <button class="btn btn-outline-{{ 'secondary' if user.is_active else 'success' }}" 
+                                                onclick="toggleUserStatus({{ user.id }}, {{ user.is_active|lower }})" 
+                                                title="{{ 'Desativar' if user.is_active else 'Ativar' }}">
+                                            <i class="fas fa-{{ 'pause' if user.is_active else 'play' }}"></i>
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-outline-info" 
+                                                onclick="resetPassword({{ user.id }}, '{{ user.username }}')" 
+                                                title="Resetar Senha">
+                                            <i class="fas fa-key"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-users fa-5x text-muted mb-3"></i>
+                <h4>Nenhum usuário encontrado</h4>
+                <p class="text-muted">Comece adicionando o primeiro usuário ao sistema.</p>
+                <a href="{{ url_for('add_user') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus"></i> Adicionar Primeiro Usuário
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal de Confirmação -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Ação</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage">Tem certeza que deseja realizar esta ação?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let confirmAction = null;
+
+function deleteUser(userId, username) {
+    document.getElementById('confirmMessage').innerHTML = 
+        `Tem certeza que deseja <strong>excluir</strong> o usuário "${username}"?<br>
+         <span class="text-danger">Esta ação não pode ser desfeita.</span>`;
+    
+    confirmAction = function() {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/users/${userId}/delete`;
+        
+        // Adicionar token CSRF se disponível
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'csrf_token';
+            input.value = csrfToken.getAttribute('content');
+            form.appendChild(input);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    };
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function toggleUserStatus(userId, isActive) {
+    const action = isActive ? 'desativar' : 'ativar';
+    const username = event.target.closest('tr').querySelector('strong').textContent;
+    
+    document.getElementById('confirmMessage').innerHTML = 
+        `Tem certeza que deseja <strong>${action}</strong> o usuário "${username}"?`;
+    
+    confirmAction = function() {
+        fetch(`/users/${userId}/toggle-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ active: !isActive })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                showAlert('danger', data.message || 'Erro ao alterar status do usuário');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erro ao conectar com o servidor');
+        });
+    };
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+function resetPassword(userId, username) {
+    document.getElementById('confirmMessage').innerHTML = 
+        `Tem certeza que deseja <strong>resetar a senha</strong> do usuário "${username}"?<br>
+         <span class="text-info">A nova senha será: 123456</span>`;
+    
+    confirmAction = function() {
+        fetch(`/users/${userId}/reset-password`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+            } else {
+                showAlert('danger', data.message || 'Erro ao resetar senha');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Erro ao conectar com o servidor');
+        });
+    };
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+}
+
+// Event listener para o botão de confirmação
+document.getElementById('confirmButton').addEventListener('click', function() {
+    if (confirmAction) {
+        confirmAction();
+        const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'));
+        modal.hide();
+        confirmAction = null;
+    }
+});
+
+function showAlert(type, message) {
+    const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHTML);
+}
+</script>
+{% endblock %}

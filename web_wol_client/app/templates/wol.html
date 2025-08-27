@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Wake on LAN - Sistema WOL{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-power-off"></i> Wake on LAN
+            <small class="text-muted">Ligar dispositivos remotamente</small>
+        </h1>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-power-off"></i> Enviar Comando Wake-on-LAN</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.device_ids.label(class="form-label") }}
+                        <div class="form-text mb-2">
+                            Selecione um ou mais dispositivos para enviar o comando WOL.
+                            Use Ctrl+Click (Windows/Linux) ou Cmd+Click (Mac) para selecionar múltiplos dispositivos.
+                        </div>
+                        
+                        {% if form.device_ids.choices %}
+                        <select name="device_ids" id="device_ids" class="form-select" multiple size="8" required>
+                            {% for device_id, device_label in form.device_ids.choices %}
+                            <option value="{{ device_id }}">{{ device_label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Nenhum dispositivo disponível</strong><br>
+                            Você não tem acesso a nenhum dispositivo ou não há dispositivos cadastrados no sistema.
+                            {% if current_user.is_admin %}
+                            <br><a href="{{ url_for('add_device') }}" class="btn btn-sm btn-primary mt-2">
+                                <i class="fas fa-plus"></i> Adicionar Dispositivo
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if form.device_ids.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.device_ids.errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if form.device_ids.choices %}
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAll()">
+                                <i class="fas fa-check-square"></i> Selecionar Todos
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectNone()">
+                                <i class="fas fa-square"></i> Limpar Seleção
+                            </button>
+                        </div>
+                        
+                        <div>
+                            <button type="submit" class="btn btn-success btn-lg" onclick="return confirmWOL()">
+                                <i class="fas fa-power-off"></i> Enviar Wake-on-LAN
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+        
+        <!-- Informações sobre WOL -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Informações sobre Wake-on-LAN</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-check-circle text-success"></i> Como funciona:</h6>
+                        <ul class="small">
+                            <li>Envia um "pacote mágico" para o endereço MAC do dispositivo</li>
+                            <li>O dispositivo deve estar configurado para aceitar WOL na BIOS/UEFI</li>
+                            <li>A placa de rede deve permanecer energizada quando o PC está desligado</li>
+                            <li>Funciona apenas na mesma rede local (LAN)</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-exclamation-triangle text-warning"></i> Requisitos:</h6>
+                        <ul class="small">
+                            <li>WOL habilitado na BIOS/UEFI do dispositivo de destino</li>
+                            <li>Configuração "Wake on Magic Packet" na placa de rede</li>
+                            <li>Cabo de rede conectado (não funciona via Wi-Fi em alguns casos)</li>
+                            <li>Dispositivo em modo "suspend" ou "hibernate" (não "shutdown" completo)</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <i class="fas fa-lightbulb"></i>
+                    <strong>Dica:</strong> Se o WOL não funcionar, verifique se o dispositivo está realmente em modo de suspensão 
+                    e se as configurações de energia estão corretas. Alguns dispositivos precisam ser desligados via sistema operacional 
+                    para manter a placa de rede energizada.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectAll() {
+    const select = document.getElementById('device_ids');
+    for (let i = 0; i < select.options.length; i++) {
+        select.options[i].selected = true;
+    }
+}
+
+function selectNone() {
+    const select = document.getElementById('device_ids');
+    for (let i = 0; i < select.options.length; i++) {
+        select.options[i].selected = false;
+    }
+}
+
+function confirmWOL() {
+    const select = document.getElementById('device_ids');
+    const selectedDevices = [];
+    
+    for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].selected) {
+            selectedDevices.push(select.options[i].text);
+        }
+    }
+    
+    if (selectedDevices.length === 0) {
+        alert('Por favor, selecione pelo menos um dispositivo.');
+        return false;
+    }
+    
+    const deviceList = selectedDevices.join('\n• ');
+    const message = `Tem certeza que deseja enviar comando Wake-on-LAN para os seguintes dispositivos?\n\n• ${deviceList}`;
+    
+    return confirm(message);
+}
+
+// Adicionar funcionalidade de duplo clique para selecionar/deselecionar
+document.addEventListener('DOMContentLoaded', function() {
+    const select = document.getElementById('device_ids');
+    if (select) {
+        select.addEventListener('dblclick', function(e) {
+            if (e.target.tagName === 'OPTION') {
+                e.target.selected = !e.target.selected;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

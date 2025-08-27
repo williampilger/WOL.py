@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  wol-system:
+    build: .
+    container_name: wol-system
+    restart: unless-stopped
+    ports:
+      - "5000:5000"  # Altere a primeira porta conforme necessário
+    volumes:
+      - ./data:/app/data
+    environment:
+      - FLASK_ENV=production
+      - DATABASE_PATH=/app/data/wol_system.db
+    network_mode: bridge
+    privileged: true  # Necessário para algumas operações de rede

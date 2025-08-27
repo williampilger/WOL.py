@@ -1,0 +1,330 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema WOL{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+            <small class="text-muted">Bem-vindo, {{ current_user.username }}!</small>
+        </h1>
+    </div>
+</div>
+
+<!-- Estatísticas -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_devices }}</h4>
+                        <p class="card-text">Total de Dispositivos</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-desktop fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ online_devices }}</h4>
+                        <p class="card-text">Dispositivos Online</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ offline_devices }}</h4>
+                        <p class="card-text">Dispositivos Offline</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-times-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ user_devices|length }}</h4>
+                        <p class="card-text">Seus Dispositivos</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ações Rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bolt"></i> Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('wol') }}" class="btn btn-success btn-lg w-100">
+                            <i class="fas fa-power-off"></i><br>Wake on LAN
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('devices') }}" class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-desktop"></i><br>Gerenciar Dispositivos
+                        </a>
+                    </div>
+                    {% if current_user.is_admin %}
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('network_scan') }}" class="btn btn-info btn-lg w-100">
+                            <i class="fas fa-search"></i><br>Scan de Rede
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('users') }}" class="btn btn-warning btn-lg w-100">
+                            <i class="fas fa-users"></i><br>Gerenciar Usuários
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dispositivos Acessíveis -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5><i class="fas fa-desktop"></i> Seus Dispositivos</h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="refreshDevices()">
+                    <i class="fas fa-sync-alt"></i> Atualizar Status
+                </button>
+            </div>
+            <div class="card-body">
+                {% if user_devices %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>IP</th>
+                                <th>Status</th>
+                                <th>Última Verificação</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in user_devices %}
+                            <tr>
+                                <td>
+                                    <strong>{{ device.name }}</strong>
+                                    {% if device.network_name %}
+                                    <br><small class="text-muted">{{ device.network_name }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>{{ device.ip_address }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if device.status.value == 'online' else 'danger' if device.status.value == 'offline' else 'secondary' }}">
+                                        {% if device.status.value == 'online' %}
+                                            <i class="fas fa-check-circle"></i> Online
+                                        {% elif device.status.value == 'offline' %}
+                                            <i class="fas fa-times-circle"></i> Offline
+                                        {% else %}
+                                            <i class="fas fa-question-circle"></i> Desconhecido
+                                        {% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if device.last_seen %}
+                                        {{ device.last_seen.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Nunca</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="pingDevice('{{ device.id }}')" title="Ping">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="wolDevice('{{ device.id }}')" title="Wake on LAN">
+                                            <i class="fas fa-power-off"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-desktop fa-3x mb-3"></i>
+                    <p>Nenhum dispositivo acessível encontrado.</p>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('add_device') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Adicionar Dispositivo
+                    </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logs Recentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Atividades Recentes</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_logs %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Dispositivo</th>
+                                <th>Ação</th>
+                                <th>Status</th>
+                                <th>Usuário</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in recent_logs %}
+                            <tr>
+                                <td>{{ log.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                                <td>{{ log.device.name }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ log.action }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if log.status == 'SUCCESS' else 'danger' }}">
+                                        {{ log.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if log.user %}
+                                        {{ log.user.username }}
+                                    {% else %}
+                                        <span class="text-muted">Sistema</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-3">
+                    <i class="fas fa-history fa-2x mb-2"></i>
+                    <p>Nenhuma atividade recente encontrada.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function refreshDevices() {
+    location.reload();
+}
+
+function pingDevice(deviceId) {
+    fetch(`/api/ping/${deviceId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', `Ping realizado com sucesso: ${data.message}`);
+            } else {
+                showAlert('danger', `Erro no ping: ${data.message}`);
+            }
+            setTimeout(() => location.reload(), 2000);
+        })
+        .catch(error => {
+            showAlert('danger', 'Erro ao realizar ping');
+        });
+}
+
+function wolDevice(deviceId) {
+    if (confirm('Deseja enviar comando Wake-on-LAN para este dispositivo?')) {
+        // Implementar chamada WOL via AJAX
+        showAlert('info', 'Função WOL será implementada via formulário principal');
+    }
+}
+
+function showAlert(type, message) {
+    const alertHTML = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    document.querySelector('.container').insertAdjacentHTML('afterbegin', alertHTML);
+}
+
+// Atualização automática do dashboard a cada 5 minutos
+setInterval(function() {
+    // Verificar se a página ainda está ativa (não em background)
+    if (!document.hidden) {
+        fetch('/api/refresh-all-status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.updated_count > 0) {
+                    // Recarregar página silenciosamente se houve mudanças
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.log('Atualização automática falhou:', error);
+            });
+    }
+}, 300000); // 5 minutos = 300000ms
+
+// Indicador visual de última atualização
+document.addEventListener('DOMContentLoaded', function() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('pt-BR');
+    
+    // Adicionar indicador de última atualização
+    const header = document.querySelector('h1');
+    if (header) {
+        const indicator = document.createElement('small');
+        indicator.className = 'text-muted ms-2';
+        indicator.innerHTML = `(Última atualização: ${timeString})`;
+        header.appendChild(indicator);
+    }
+});
+</script>
+{% endblock %}
