@@ -31,4 +31,4 @@ ENV FLASK_ENV=production
 ENV DATABASE_PATH=/app/data/wol_system.db
 
 # Comando para iniciar a aplicação
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "run:app"]
+CMD ["python", "run.py"]

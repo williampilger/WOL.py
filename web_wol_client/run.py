@@ -31,8 +31,13 @@ def main():
     print("⚠️  IMPORTANTE: Altere a senha padrão após o primeiro login!")
     
     try:
-        # Iniciar servidor de desenvolvimento
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        # Verificar se está rodando em container (production)
+        if os.environ.get('FLASK_ENV') == 'production':
+            # Para produção, usar bind em todas as interfaces
+            app.run(host='0.0.0.0', port=5000, debug=False)
+        else:
+            # Para desenvolvimento, usar debug mode
+            app.run(host='0.0.0.0', port=5000, debug=True)
     except KeyboardInterrupt:
         print("\n🛑 Sistema WOL finalizado pelo usuário")
     except Exception as e:

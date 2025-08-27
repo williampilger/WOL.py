@@ -39,6 +39,13 @@ def create_app():
         db.create_all()
         create_initial_data()
     
+    # Iniciar monitoramento automático em background
+    import atexit
+    network_manager.start_monitoring(interval=60)
+    
+    # Parar monitoramento quando aplicação for encerrada
+    atexit.register(network_manager.stop_monitoring)
+    
     # Rotas de autenticação
     @app.route('/login', methods=['GET', 'POST'])
     def login():
